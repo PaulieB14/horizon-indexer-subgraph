@@ -10,7 +10,7 @@ dataSources:
     source:
       address: "0x00669A4CF01450B64E8A2A20E9b1FCB71E61eF03"
       abi: HorizonStaking
-      startBlock: 290000000
+      startBlock: 430000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -32,7 +32,7 @@ dataSources:
     source:
       address: "0xb2Bb92d0DE618878E438b55D5846cfecD9301105"
       abi: SubgraphService
-      startBlock: 290000000
+      startBlock: 397000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -64,7 +64,7 @@ dataSources:
     source:
       address: "0x3bE385576d7C282070Ad91BF94366de9f9ba3571"
       abi: StakingExtension
-      startBlock: 290000000
+      startBlock: 397000000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
