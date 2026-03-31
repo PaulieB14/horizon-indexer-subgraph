@@ -102,7 +102,7 @@ Indexes Graph Protocol Horizon staking events on Arbitrum — operator-to-indexe
 ### Daily reward aggregation per indexer
 ```graphql
 {
-  rewardDailyAgg_collection(interval: "day", first: 7) {
+  rewardDailyAggs(interval: "day", first: 7) {
     timestamp
     indexer
     totalRewards
@@ -116,7 +116,7 @@ Indexes Graph Protocol Horizon staking events on Arbitrum — operator-to-indexe
 ### Hourly query fee aggregation
 ```graphql
 {
-  queryFeeDailyAgg_collection(interval: "hour", first: 24) {
+  queryFeeDailyAggs(interval: "hour", first: 24) {
     timestamp
     indexer
     totalCollected
@@ -129,7 +129,7 @@ Indexes Graph Protocol Horizon staking events on Arbitrum — operator-to-indexe
 ### Daily delegation events
 ```graphql
 {
-  delegationDailyAgg_collection(interval: "day", first: 7) {
+  delegationDailyAggs(interval: "day", first: 7) {
     timestamp
     indexer
     totalTokens
