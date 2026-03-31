@@ -173,10 +173,105 @@ Indexes Graph Protocol Horizon staking events on Arbitrum — operator-to-indexe
 - **No eth_calls**: pure event-based indexing
 - **Timeseries & Aggregations**: hourly/daily for rewards, fees, delegations
 
+## Latency Probe
+
+`probe.sh` measures gateway response time and identifies which indexers served each query.
+
+### How it works
+
+1. **Ping the gateway N times** for a specific subgraph deployment
+2. **Measure** response time (ms) and block freshness (blocks behind chain head)
+3. **Recover the attestation signer** from the `graph-attestation` response header using ecrecover
+4. **Look up the signer** in this subgraph's `operators` entity to identify the indexer
+
+### Usage
+
+```bash
+# Requires: pip install web3 eth-keys
+
+# Probe the Graph Network subgraph 10 times
+./probe.sh QmT329Bej8AwSLahmgnmi6fdYkj3rorYAcCes45gDv9aJ4 10
+
+# Probe any deployment with custom API key
+./probe.sh <DEPLOYMENT_HASH> <NUM_REQUESTS> <API_KEY>
+```
+
+### Example output
+
+```
+── Step 1: Probing gateway 10 times ──
+
+#    Latency    Behind   Attestation (r prefix)
+--------------------------------------------------------------------------------------------
+1    0.528s     -3       0xfe34cffb83664bc2...
+2    0.295s     -1       0x74c3dc3a54853a79...
+3    0.209s     0        0x2cd7957a3eaff577...
+
+── Step 2: Recovering attestation signers ──
+
+Recovered 10 unique signers from 10 requests
+
+Signer                                       Reqs  Avg(s)      Min      Max   Behind
+----------------------------------------------------------------------------
+0x4561Ec490D00b94EADb043E4f7b12e08Bc24b55D      1    0.528    0.528    0.528       -3
+0x9fF82FE1D41BC0DBa77b75e2B05b726261885761      1    0.200    0.200    0.200        0
+
+── Step 3: Looking up signers in Horizon Indexer Performance subgraph ──
+
+  MATCH: 0x80984fe34dae1b... -> Pinax (0xedca8740873152...)
+  ????: 0x4561ec490d00b9... = not found (attestation-only signing key)
+```
+
+### How to interpret results
+
+| Metric | What it means |
+|--------|--------------|
+| **Latency** | Gateway round-trip time including indexer query execution |
+| **Behind** | Blocks behind chain head — lower is fresher (negative = ahead of RPC) |
+| **MATCH** | Signer is a registered Horizon operator — indexer identified |
+| **SELF** | Signer address IS the indexer (self-operated) |
+| **????** | Attestation signing key derived per-allocation — not a registered operator |
+
+### Why some signers don't match
+
+Attestation signing keys are derived from the indexer's mnemonic + allocation parameters (epoch, deployment, index) using BIP39 derivation. Each allocation gets a unique signing key. These keys are NOT the same as Horizon operators — they're generated locally by the indexer-agent software.
+
+Signers that DO match a Horizon operator are confirmed identities. Unmatched signers can still be correlated by:
+- Checking which indexers have active allocations on the deployment
+- Comparing allocation size with gateway selection frequency
+- Using query fee revenue as a proxy for selection rate (more fees = gateway picks them more = likely better latency)
+
+### Manual probe (without script)
+
+```bash
+# 1. Get chain head
+HEAD=$(curl -s https://arb1.arbitrum.io/rpc \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' | \
+  python3 -c "import sys,json; print(int(json.load(sys.stdin)['result'],16))")
+
+# 2. Query subgraph through gateway
+DEPLOYMENT="QmT329Bej8AwSLahmgnmi6fdYkj3rorYAcCes45gDv9aJ4"
+API_KEY="your-key"
+
+RESULT=$(curl -s -w "\n%{time_total}" \
+  "https://gateway.thegraph.com/api/${API_KEY}/deployments/id/${DEPLOYMENT}" \
+  -d '{"query":"{ _meta { block { number } } }"}')
+
+BLOCK=$(echo "$RESULT" | head -1 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['_meta']['block']['number'])")
+LATENCY=$(echo "$RESULT" | tail -1)
+
+echo "Block: $BLOCK | Behind: $((HEAD - BLOCK)) | Response: ${LATENCY}s"
+
+# 3. Check who's allocated (via this subgraph)
+curl -s "https://api.studio.thegraph.com/query/111767/graph-horizon-indexer-performance/version/latest" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ allocations(where: {subgraphDeploymentID: \"0x45c636b73728d75a77b84c782e2a44624a294c1414326e59f12d60e0a6e58f51\", status: \"Active\"}, orderBy: tokens, orderDirection: desc, first: 10) { indexer { id } tokens rewardsEarned queryFeesCollected } }"}'
+```
+
 ## Deploy
 
 ```bash
 graph auth <deploy-key>
 graph codegen && graph build
-graph deploy graph-indexer-performance --version-label v0.0.x
+graph deploy graph-horizon-indexer-performance --version-label v0.0.x
 ```
