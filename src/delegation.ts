@@ -4,7 +4,7 @@ import {
   StakeDelegatedLocked,
   StakeDelegatedWithdrawn,
 } from "../generated/StakingExtension/StakingExtension";
-import { Delegation } from "../generated/schema";
+import { Delegation, DelegationData } from "../generated/schema";
 import { getOrCreateIndexer, ZERO_BI } from "./helpers";
 
 function getOrCreateDelegation(indexer: Bytes, delegator: Bytes, timestamp: BigInt): Delegation {
@@ -35,6 +35,14 @@ export function handleStakeDelegated(event: StakeDelegated): void {
 
   indexer.totalDelegated = indexer.totalDelegated.plus(event.params.tokens);
   indexer.save();
+
+  let ts = new DelegationData(event.block.timestamp.toI64());
+  ts.timestamp = event.block.timestamp.toI64();
+  ts.indexer = event.params.indexer;
+  ts.delegator = event.params.delegator;
+  ts.tokens = event.params.tokens;
+  ts.eventType = "delegated";
+  ts.save();
 }
 
 export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
@@ -45,6 +53,14 @@ export function handleStakeDelegatedLocked(event: StakeDelegatedLocked): void {
   delegation.lockedUntil = event.params.until;
   delegation.lastUpdatedAt = event.block.timestamp;
   delegation.save();
+
+  let ts = new DelegationData(event.block.timestamp.toI64());
+  ts.timestamp = event.block.timestamp.toI64();
+  ts.indexer = event.params.indexer;
+  ts.delegator = event.params.delegator;
+  ts.tokens = event.params.tokens;
+  ts.eventType = "locked";
+  ts.save();
 }
 
 export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): void {
@@ -58,4 +74,12 @@ export function handleStakeDelegatedWithdrawn(event: StakeDelegatedWithdrawn): v
 
   indexer.totalDelegated = indexer.totalDelegated.minus(event.params.tokens);
   indexer.save();
+
+  let ts = new DelegationData(event.block.timestamp.toI64());
+  ts.timestamp = event.block.timestamp.toI64();
+  ts.indexer = event.params.indexer;
+  ts.delegator = event.params.delegator;
+  ts.tokens = event.params.tokens;
+  ts.eventType = "withdrawn";
+  ts.save();
 }

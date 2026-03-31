@@ -6,7 +6,7 @@ import {
   IndexingRewardsCollected,
   QueryFeesCollected,
 } from "../generated/SubgraphService/SubgraphService";
-import { Allocation, RewardEvent, QueryFeeEvent } from "../generated/schema";
+import { Allocation, RewardEvent, QueryFeeEvent, RewardData, QueryFeeData } from "../generated/schema";
 import { getOrCreateIndexer, getOrCreateGlobalStats, ZERO_BI } from "./helpers";
 
 export function handleAllocationCreated(event: AllocationCreated): void {
@@ -91,6 +91,16 @@ export function handleIndexingRewardsCollected(event: IndexingRewardsCollected):
   let stats = getOrCreateGlobalStats();
   stats.totalRewardsDistributed = stats.totalRewardsDistributed.plus(event.params.tokensRewards);
   stats.save();
+
+  // Timeseries data point
+  let ts = new RewardData(event.block.timestamp.toI64());
+  ts.timestamp = event.block.timestamp.toI64();
+  ts.indexer = event.params.indexer;
+  ts.subgraphDeploymentID = event.params.subgraphDeploymentId;
+  ts.tokensRewards = event.params.tokensRewards;
+  ts.tokensIndexerRewards = event.params.tokensIndexerRewards;
+  ts.tokensDelegationRewards = event.params.tokensDelegationRewards;
+  ts.save();
 }
 
 export function handleQueryFeesCollected(event: QueryFeesCollected): void {
@@ -118,4 +128,13 @@ export function handleQueryFeesCollected(event: QueryFeesCollected): void {
   let stats = getOrCreateGlobalStats();
   stats.totalQueryFeesCollected = stats.totalQueryFeesCollected.plus(event.params.tokensCollected);
   stats.save();
+
+  // Timeseries data point
+  let ts = new QueryFeeData(event.block.timestamp.toI64());
+  ts.timestamp = event.block.timestamp.toI64();
+  ts.indexer = event.params.serviceProvider;
+  ts.subgraphDeploymentID = event.params.subgraphDeploymentId;
+  ts.tokensCollected = event.params.tokensCollected;
+  ts.tokensCurators = event.params.tokensCurators;
+  ts.save();
 }

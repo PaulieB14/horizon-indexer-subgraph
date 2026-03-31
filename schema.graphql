@@ -85,3 +85,60 @@ type GlobalStats @entity(immutable: false) {
   totalRewardsDistributed: BigInt!
   totalQueryFeesCollected: BigInt!
 }
+
+# ── Timeseries & Aggregations ──
+
+type RewardData @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  indexer: Bytes!
+  subgraphDeploymentID: Bytes!
+  tokensRewards: BigInt!
+  tokensIndexerRewards: BigInt!
+  tokensDelegationRewards: BigInt!
+}
+
+type RewardDailyAgg @aggregation(intervals: ["hour", "day"], source: "RewardData") {
+  id: Int8!
+  timestamp: Timestamp!
+  indexer: Bytes!
+  totalRewards: BigInt! @aggregate(fn: "sum", arg: "tokensRewards")
+  totalIndexerRewards: BigInt! @aggregate(fn: "sum", arg: "tokensIndexerRewards")
+  totalDelegationRewards: BigInt! @aggregate(fn: "sum", arg: "tokensDelegationRewards")
+  rewardCount: Int8! @aggregate(fn: "count", cumulative: false)
+}
+
+type QueryFeeData @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  indexer: Bytes!
+  subgraphDeploymentID: Bytes!
+  tokensCollected: BigInt!
+  tokensCurators: BigInt!
+}
+
+type QueryFeeDailyAgg @aggregation(intervals: ["hour", "day"], source: "QueryFeeData") {
+  id: Int8!
+  timestamp: Timestamp!
+  indexer: Bytes!
+  totalCollected: BigInt! @aggregate(fn: "sum", arg: "tokensCollected")
+  totalCurators: BigInt! @aggregate(fn: "sum", arg: "tokensCurators")
+  feeCount: Int8! @aggregate(fn: "count", cumulative: false)
+}
+
+type DelegationData @entity(timeseries: true) {
+  id: Int8!
+  timestamp: Timestamp!
+  indexer: Bytes!
+  delegator: Bytes!
+  tokens: BigInt!
+  eventType: String! # delegated, locked, withdrawn
+}
+
+type DelegationDailyAgg @aggregation(intervals: ["day"], source: "DelegationData") {
+  id: Int8!
+  timestamp: Timestamp!
+  indexer: Bytes!
+  totalTokens: BigInt! @aggregate(fn: "sum", arg: "tokens")
+  eventCount: Int8! @aggregate(fn: "count", cumulative: false)
+}
