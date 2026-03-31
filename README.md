@@ -2,7 +2,6 @@
 
 Indexes Graph Protocol Horizon staking events on Arbitrum — operator-to-indexer mappings, allocation lifecycle, per-allocation rewards and query fees, delegation tracking, with hourly and daily timeseries aggregations.
 
-**Studio:** [graph-indexer-performance](https://thegraph.com/studio/subgraph/graph-indexer-performance)
 
 ## Contracts Indexed
 
