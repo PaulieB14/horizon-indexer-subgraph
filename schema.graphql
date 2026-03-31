@@ -1,0 +1,87 @@
+type Indexer @entity(immutable: false) {
+  id: Bytes! # indexer address
+  operators: [Operator!]! @derivedFrom(field: "indexer")
+  allocations: [Allocation!]! @derivedFrom(field: "indexer")
+  delegations: [Delegation!]! @derivedFrom(field: "indexer")
+  totalStaked: BigInt!
+  totalDelegated: BigInt!
+  totalRewardsEarned: BigInt!
+  totalQueryFeesCollected: BigInt!
+  allocationCount: Int!
+  activeAllocationCount: Int!
+  registeredAt: BigInt!
+  url: String
+}
+
+type Operator @entity(immutable: false) {
+  id: ID! # indexer-verifier-operator
+  indexer: Indexer!
+  operator: Bytes!
+  verifier: Bytes!
+  active: Boolean!
+  setAt: BigInt!
+  setTx: Bytes!
+}
+
+type Allocation @entity(immutable: false) {
+  id: Bytes! # allocation ID
+  indexer: Indexer!
+  subgraphDeploymentID: Bytes!
+  tokens: BigInt!
+  createdAtEpoch: BigInt!
+  createdAt: BigInt!
+  createdTx: Bytes!
+  closedAtEpoch: BigInt
+  closedAt: BigInt
+  closedTx: Bytes
+  status: String! # Active, Closed
+  rewardsEarned: BigInt!
+  queryFeesCollected: BigInt!
+  poi: Bytes
+}
+
+type Delegation @entity(immutable: false) {
+  id: ID! # indexer-delegator
+  indexer: Indexer!
+  delegator: Bytes!
+  tokens: BigInt!
+  shares: BigInt!
+  lockedTokens: BigInt!
+  lockedUntil: BigInt!
+  createdAt: BigInt!
+  lastUpdatedAt: BigInt!
+}
+
+type RewardEvent @entity(immutable: true) {
+  id: Bytes!
+  indexer: Indexer!
+  allocationID: Bytes!
+  subgraphDeploymentID: Bytes!
+  tokensRewards: BigInt!
+  tokensIndexerRewards: BigInt!
+  tokensDelegationRewards: BigInt!
+  epoch: BigInt!
+  timestamp: BigInt!
+  tx: Bytes!
+}
+
+type QueryFeeEvent @entity(immutable: true) {
+  id: Bytes!
+  indexer: Indexer!
+  allocationID: Bytes!
+  subgraphDeploymentID: Bytes!
+  tokensCollected: BigInt!
+  tokensCurators: BigInt!
+  timestamp: BigInt!
+  tx: Bytes!
+}
+
+type GlobalStats @entity(immutable: false) {
+  id: ID!
+  totalIndexers: Int!
+  totalOperators: Int!
+  totalAllocations: Int!
+  totalActiveAllocations: Int!
+  totalRewardsDistributed: BigInt!
+  totalQueryFeesCollected: BigInt!
+}
